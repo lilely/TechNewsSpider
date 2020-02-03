@@ -7,6 +7,7 @@
 
 import psycopg2 #PostgreSQL engine
 import json
+import re
 from juejin.items import FeedItem
 from juejin.items import FeedDetail
 from juejin.items import FeedContentItem
@@ -55,24 +56,63 @@ class PostgresPipeline(object):
     def process_item(self,item,spider):
         if isinstance(item,FeedItem):
             self.process_feedItem(item,spider)
-            print('OK lo')
+            print('Feed Simple item processed')
+        if isinstance(item,FeedDetail):
+            self.process_feedDetail(item,spider)
+            print('Feed Detail item processed')
         return item
 
-    # feedItem['feedID'] = dic['id']
-    #     feedItem['hot'] = dic['hot']
-    #     feedItem['hotIndex'] = dic['hotIndex']
-    #     feedItem['original'] = dic['original']
-    #     feedItem['originalUrl'] = dic['originalUrl']
-    #     feedItem['title'] = dic['title']
-    #     feedItem['createdAt'] = dic['createdAt']
-    #     feedItem['updatedAt'] = dic['updatedAt']
-    #     author = Author()
-    #     author['ID'] = dic['user']['id']
-    #     author['role'] = dic['user']['role']
-    #     author['username'] = dic['user']['username']
-    #     author['avatarHd'] = dic['user'].get('avatarHd',None)
-    #     author['avatarLarge'] = dic['user'].get('avatarLarge',None)
-    #     feedItem['user'] = author
+    def process_feedDetail(self,item,spider):
+        insert_sql = """INSERT INTO public."FeedDetail"(feed_id,title,author,tag_name,content_items) VALUES(%s,%s,%s,%s,%s) RETURNING id;"""
+        query_sql = """SELECT id FROM public."FeedDetail" 
+                        WHERE feed_id = %s"""
+        update_sql = """UPDATE public."FeedDetail" 
+                        SET title = %s ,tag_name =%s ,author = %s ,content_items = %s
+                        WHERE feed_id = %s;"""
+        try:
+            print('feed ID in detail is {}'.format(item['feedID']))
+            cur = self.connection.cursor()
+            self.connection.rollback()
+            cur.execute(query_sql,(item['feedID'],))
+            if cur.rowcount > 0:
+                row = cur.fetchone()[0]
+            else:
+                row = 0
+            print('row is {}'.format(row))
+            if row < 1:
+                itemsArray = []
+                for contentItem in item['contentItems']:
+                    itemsArray.append(contentItem.toDic())
+                content_items_dic = {
+                    'content_items' : itemsArray
+                }
+                self.connection.rollback()
+                cur.execute(insert_sql,
+                            (item['feedID'],
+                            item['title'],
+                            json.dumps(item['author'].toDic()),
+                            item['tagName'],
+                            json.dumps(content_items_dic)
+                            )
+                            )
+            else:
+                self.connection.rollback()
+                itemsArray = []
+                for item in item['contentItems']:
+                    itemsArray.append(item.toDic())
+                cur.execute(update_sql,
+                            (item['title'],
+                            item['tagName'],
+                            json.dumps(item['author'].toDic()),
+                            json.dumps(itemsArray),
+                            item['feedID']))
+            self.connection.commit()
+        except Exception as e:
+            print('FeedDetail insert or update failed with exception:{}'.format(e))
+        finally:
+            if cur != None:
+                cur.close()
+        return item
 
     def process_feedItem(self,item,spider):
         insert_sql = """INSERT INTO public."FeedSimple"(feed_id,"from","tag_name",original,original_url,title,author,created_at,updated_at) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id;"""
@@ -116,7 +156,7 @@ class PostgresPipeline(object):
                             item['feedID']))
             self.connection.commit()
         except Exception as e:
-            print('postgres insert failed with exception:{}'.format(e))
+            print('FeedSimple insert or update  insert failed with exception:{}'.format(e))
         finally:
             if cur != None:
                 cur.close()

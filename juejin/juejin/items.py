@@ -73,14 +73,43 @@ class FeedItem(scrapy.Item):
         return dic
 
 class FeedDetail(scrapy.Item):
-    ID = scrapy.Field()
+    feedID = scrapy.Field()
     title = scrapy.Field()
+    author = scrapy.Field()
+    tagName = scrapy.Field()
     contentItems = scrapy.Field()
+
+    @classmethod
+    def formatFeedDetail(cls,dic):
+        feedDetail = FeedDetail()
+        author = Author()
+        author['ID'] = dic['author']['id']
+        author['role'] = dic['author']['role']
+        author['username'] = dic['author']['username']
+        author['avatarHd'] = dic['author'].get('avatarHd',None)
+        author['avatarLarge'] = dic['author'].get('avatarLarge',None)
+        feedDetail['author'] = author
+        feedDetail['feedID'] = dic['id']
+        feedDetail['title'] = dic['title']
+        feedDetail['tagName'] = dic['tagName']
+        feedDetail['contentItems'] = dic['contentItems']
+
+        return feedDetail
 
 class FeedContentItem(scrapy.Item):
     ID = scrapy.Field()
     contentType = scrapy.Field()
     imageUrl = scrapy.Field()
     text = scrapy.Field()
+    
+    def toDic(self):
+        dic = {
+            "contentType" : self['contentType'],
+            "imageUrl" : self.get('imageUrl'),
+            "text" : self.get('text')
+        }
+        dic.setdefault('imageUrl',"")
+        dic.setdefault('text',"")
+        return dic
 
 

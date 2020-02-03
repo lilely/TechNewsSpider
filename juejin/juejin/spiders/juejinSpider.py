@@ -4,6 +4,7 @@ import urllib
 import urllib2
 import json
 import numpy
+import sys
 from juejin.items import FeedItem
 from juejin.items import FeedDetail
 from juejin.items import FeedContentItem
@@ -118,6 +119,46 @@ class JuejinspiderSpider(scrapy.Spider):
             feedItem = FeedItem.formatFeedItem(node,response.meta['tagName'])
             print feedItem['feedID']
             yield feedItem 
+        
+        # for edge in edges:
+        #     node = edge['node']
+        #     if node['originalUrl'] != None:
+        #         yield scrapy.FormRequest(
+        #                 url = node['originalUrl'],
+        #                 method = 'GET', 
+        #                 meta = response.meta,
+        #                 callback = self.parse_detail,
+        #             )
+        for edge in edges:
+            node = edge['node']
+            meta = response.meta
+            meta['isDetail'] = True
+            meta['author'] = node['user']
+            meta['id'] = node['id']
+            yield scrapy.FormRequest(
+                            url = node['originalUrl'],
+                            method = 'GET', 
+                            meta = meta,
+                            callback = self.parse_detail,
+                        )
+
 
     def parse_detail(self, response):
-        print 'YYYYYYY'
+        reload(sys)
+        sys.setdefaultencoding('utf8')  
+        dic = response.meta
+        dic['title'] = response.xpath(u"//body/div[@id='juejin']/div[@class='view-container']//article//h1[@class='article-title']/text()").extract()
+        text_list = response.xpath(u"//body/div[@id='juejin']/div[@class='view-container']//article//p/text()").extract()
+        contentItems = []
+        for text in text_list:
+            feedContentItem = FeedContentItem()
+            feedContentItem['contentType'] = '文本'
+            feedContentItem['text'] = text
+            contentItems.append(feedContentItem)
+            # print("text in item is :{}".format(text))
+        dic['contentItems'] = contentItems
+        # print(dic)
+        feedDetail = FeedDetail.formatFeedDetail(dic)
+
+        yield feedDetail
+        

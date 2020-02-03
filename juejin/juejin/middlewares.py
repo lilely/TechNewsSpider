@@ -6,7 +6,7 @@
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
 from scrapy import signals
-
+import sys
 
 class JuejinSpiderMiddleware(object):
     # Not all methods need to be defined. If a method is not defined,
@@ -87,6 +87,18 @@ class JuejinDownloaderMiddleware(object):
         # - return a Response object
         # - return a Request object
         # - or raise IgnoreRequest
+        
+        # reload(sys)
+        # sys.setdefaultencoding('utf8')   
+        # if 'isDetail' in request.meta:
+        #     if request.meta['isDetail'] == True:
+        #         # print("The text of response is:{}".format(response.text))
+        #         text_list = response.xpath(u"//body/div[@id='juejin']/div[@class='view-container']//article//p/text()").extract()
+        #         for text in text_list:
+        #             print("on text is :{}".format(text))
+        #         article_title = response.xpath(u"//body/div[@id='juejin']/div[@class='view-container']//article//h1[@class='article-title']/text()").extract()
+        #         print("article title is :{}".format(article_title))
+
         return response
 
     def process_exception(self, request, exception, spider):

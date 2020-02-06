@@ -35,6 +35,7 @@ class FeedItem(scrapy.Item):
     original = scrapy.Field()
     originalUrl = scrapy.Field()
     title = scrapy.Field()
+    content = scrapy.Field()
     # Author field
     user = scrapy.Field() 
     createdAt = scrapy.Field()
@@ -50,6 +51,7 @@ class FeedItem(scrapy.Item):
         feedItem['title'] = dic['title']
         feedItem['createdAt'] = dic['createdAt']
         feedItem['updatedAt'] = dic['updatedAt']
+        feedItem['content'] = dic.get('content',None)
         author = Author()
         author['ID'] = dic['user']['id']
         author['role'] = dic['user']['role']
@@ -69,6 +71,7 @@ class FeedItem(scrapy.Item):
             'author': self['author'].toDic(),
             'createdAt': self['createdAt'],
             'updatedAt': self['updatedAt'],
+            'content': self['content'],
         }
         return dic
 

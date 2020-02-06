@@ -115,11 +115,11 @@ class PostgresPipeline(object):
         return item
 
     def process_feedItem(self,item,spider):
-        insert_sql = """INSERT INTO public."FeedSimple"(feed_id,"from","tag_name",original,original_url,title,author,created_at,updated_at) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id;"""
+        insert_sql = """INSERT INTO public."FeedSimple"(feed_id,"from","tag_name",original,original_url,title,author,created_at,updated_at,content) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id;"""
         query_sql = """SELECT id FROM public."FeedSimple" 
                         WHERE feed_id=%s"""
         update_sql = """UPDATE public."FeedSimple" 
-                        SET "from" = %s,"tag_name" =%s, original = %s, original_url = %s, title = %s, author = %s, created_at = %s, updated_at = %s 
+                        SET "from" = %s,"tag_name" =%s, original = %s, original_url = %s, title = %s, author = %s, created_at = %s, updated_at = %s, content = %s
                         WHERE feed_id = %s;"""
         try:
             cur = self.connection.cursor()
@@ -141,7 +141,8 @@ class PostgresPipeline(object):
                             item['title'],
                             json.dumps(item['user'].toDic()),
                             item['createdAt'],
-                            item['updatedAt']))
+                            item['updatedAt'],
+                            item['content']))
             else:
                 self.connection.rollback()
                 cur.execute(update_sql,
@@ -153,6 +154,7 @@ class PostgresPipeline(object):
                             json.dumps(item['user'].toDic()),
                             item['createdAt'],
                             item['updatedAt'],
+                            item['content'],
                             item['feedID']))
             self.connection.commit()
         except Exception as e:

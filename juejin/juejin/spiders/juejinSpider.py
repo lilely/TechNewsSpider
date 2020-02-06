@@ -42,7 +42,7 @@ class JuejinspiderSpider(scrapy.Spider):
         for index,category_id in numpy.ndenumerate(numpy_categorys):
             yield self.startRequestTab(categoryid = category_id,extensionid = extension_ids[1],tagID = index[0])
     
-        yield self.startRequestTab(categoryid = "",extensionid = extension_ids[0], tagID = -1)
+        # yield self.startRequestTab(categoryid = "",extensionid = extension_ids[0], tagID = -1)
         
 
     def startRequestTab(self,categoryid,extensionid,tagID):
@@ -120,15 +120,6 @@ class JuejinspiderSpider(scrapy.Spider):
             print feedItem['feedID']
             yield feedItem 
         
-        # for edge in edges:
-        #     node = edge['node']
-        #     if node['originalUrl'] != None:
-        #         yield scrapy.FormRequest(
-        #                 url = node['originalUrl'],
-        #                 method = 'GET', 
-        #                 meta = response.meta,
-        #                 callback = self.parse_detail,
-        #             )
         for edge in edges:
             node = edge['node']
             meta = response.meta

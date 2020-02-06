@@ -42,7 +42,7 @@ class JuejinspiderSpider(scrapy.Spider):
         for index,category_id in numpy.ndenumerate(numpy_categorys):
             yield self.startRequestTab(categoryid = category_id,extensionid = extension_ids[1],tagID = index[0])
     
-        # yield self.startRequestTab(categoryid = "",extensionid = extension_ids[0], tagID = -1)
+        yield self.startRequestTab(categoryid = "",extensionid = extension_ids[0], tagID = -1)
         
 
     def startRequestTab(self,categoryid,extensionid,tagID):

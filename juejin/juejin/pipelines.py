@@ -7,6 +7,7 @@
 
 import psycopg2 #PostgreSQL engine
 import json
+import requests
 import re
 from juejin.items import FeedItem
 from juejin.items import FeedDetail
@@ -16,6 +17,39 @@ from juejin.items import Author
 class JuejinPipeline(object):
     def process_item(self, item, spider):
         return item
+
+class VaporServerPipeline(object):
+    def __init__(self,host,port):
+        self.host = host
+        self.port = port
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(
+            host = crawler.settings.get('VAPOR_SERVER_HOST'),
+            port = crawler.settings.get('VAPOR_SERVER_PORT')
+        )
+    
+    def open_spider(self,spider):
+        pass
+
+    def close_spider(self,spider):
+        pass
+
+    def process_item(self,item,spider):
+        if isinstance(item,Author):
+            self.process_author(item,spider)
+            print('Author item processed')
+        return item
+    
+    def process_author(self,item,spider):
+        url = 'http://'+self.host+':'+self.port+'/author'
+        print("url is {}".format(url))
+        data = item.toDic()
+        # data = {"role":"guest","avatar_hd":"hd","avatar_large":"large","username":"Jack"}
+        print("data is {}".format(data))
+        requests.post(url=url,data=data)
+        # print(res.text)
 
 class PostgresPipeline(object):
     def __init__(self,postgres_url,postgres_port,postgres_db,postgres_password):
@@ -60,6 +94,9 @@ class PostgresPipeline(object):
         if isinstance(item,FeedDetail):
             self.process_feedDetail(item,spider)
             print('Feed Detail item processed')
+        if isinstance(item,Author):
+            self.process_author(item,spider)
+            print('Author item processed')
         return item
 
     def process_feedDetail(self,item,spider):
@@ -115,11 +152,11 @@ class PostgresPipeline(object):
         return item
 
     def process_feedItem(self,item,spider):
-        insert_sql = """INSERT INTO public."FeedSimple"(feed_id,"from","tag_name",original,original_url,title,author,created_at,updated_at,content) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id;"""
+        insert_sql = """INSERT INTO public."FeedSimple"(feed_id,"from","tag_name",original,original_url,title,author_name,created_at,updated_at,content) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id;"""
         query_sql = """SELECT id FROM public."FeedSimple" 
                         WHERE feed_id=%s"""
         update_sql = """UPDATE public."FeedSimple" 
-                        SET "from" = %s,"tag_name" =%s, original = %s, original_url = %s, title = %s, author = %s, created_at = %s, updated_at = %s, content = %s
+                        SET "from" = %s,"tag_name" =%s, original = %s, original_url = %s, title = %s, author_name = %s, created_at = %s, updated_at = %s, content = %s
                         WHERE feed_id = %s;"""
         try:
             cur = self.connection.cursor()
@@ -139,7 +176,8 @@ class PostgresPipeline(object):
                             item['original'],
                             item['originalUrl'],
                             item['title'],
-                            json.dumps(item['user'].toDic()),
+                            item['user']['username'],
+                            # json.dumps(item['user'].toDic()),
                             item['createdAt'],
                             item['updatedAt'],
                             item['content']))
@@ -151,7 +189,8 @@ class PostgresPipeline(object):
                             item['original'],
                             item['originalUrl'],
                             item['title'],
-                            json.dumps(item['user'].toDic()),
+                            item['user']['username'],
+                            # json.dumps(item['user'].toDic()),
                             item['createdAt'],
                             item['updatedAt'],
                             item['content'],
@@ -159,6 +198,43 @@ class PostgresPipeline(object):
             self.connection.commit()
         except Exception as e:
             print('FeedSimple insert or update  insert failed with exception:{}'.format(e))
+        finally:
+            if cur != None:
+                cur.close()
+        return item
+
+    def process_author(self,item,spider):
+        insert_sql = """INSERT INTO public."Author"(role,avatar_hd,avatar_large,username) VALUES(%s,%s,%s,%s)"""
+        query_sql = """SELECT id FROM public."Author" 
+                        WHERE username=%s"""
+        try:
+            cur = self.connection.cursor()
+            self.connection.rollback()
+            cur.execute(query_sql,(item['username'],))
+            if cur.rowcount > 0:
+                row = cur.fetchone()[0]
+            else:
+                row = 0
+            print('author row is {}'.format(row))
+            print(item['role'])
+            print(item['avatarHd'])
+            print(item['avatarLarge'])
+            print(item['username'])
+            if row < 1:
+                self.connection.rollback()
+                # cur.execute(insert_sql,
+                #             (item['role'],
+                #             item['avatarHd'],
+                #             item['avatarLarge'],
+                #             item['username']))
+                cur.execute(insert_sql,
+                            ('guest',
+                            '123',
+                            '456',
+                            '789'))
+                print("has inserted")
+        except Exception as e:
+            print('Author insert or update  insert failed with exception:{}'.format(e))
         finally:
             if cur != None:
                 cur.close()

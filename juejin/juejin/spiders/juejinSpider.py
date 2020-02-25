@@ -44,7 +44,6 @@ class JuejinspiderSpider(scrapy.Spider):
     
         yield self.startRequestTab(categoryid = "",extensionid = extension_ids[0], tagID = -1)
         
-
     def startRequestTab(self,categoryid,extensionid,tagID):
         print('tagID is {}'.format(tagID))
         url = 'https://web-api.juejin.im/query'
@@ -115,6 +114,9 @@ class JuejinspiderSpider(scrapy.Spider):
         edges = items['edges']
         for edge in edges:
             node = edge['node']
+            if node['user']!= None:
+                author = Author.formatAuthorItem(node['user'])
+                yield author
             print "*****Node is :" + json.dumps(node)
             feedItem = FeedItem.formatFeedItem(node,response.meta['tagName'])
             print feedItem['feedID']

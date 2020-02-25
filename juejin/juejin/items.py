@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+#coding=utf-8
 # Define here the models for your scraped items
 #
 # See documentation in:
@@ -19,14 +19,21 @@ class Author(scrapy.Item):
     avatarLarge = scrapy.Field()
     username = scrapy.Field()
 
+    @classmethod
+    def formatAuthorItem(cls,dic):
+        author = cls()
+        author['role'] = dic['role']
+        author['avatarHd'] = dic.get('avatarHd',None)
+        author['avatarLarge'] = dic.get('avatarLarge',None)
+        author['username'] = dic['username']
+        return author
+
     def toDic(self):
-        dic = {
-            'ID': self['ID'],
-            'role': self['role'],
-            'avatarHd': self['avatarHd'],
-            'avatarLarge': self['avatarLarge'],
-            'username': self['username']
-        }
+        dic = dict()
+        dic['role'] = self['role']
+        dic['avatar_hd'] = self['avatarHd']
+        dic['avatar_large'] = self['avatarLarge']
+        dic['username'] = self['username']
         return dic
 
 class FeedItem(scrapy.Item):

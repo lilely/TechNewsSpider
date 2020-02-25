@@ -87,7 +87,6 @@ class JuejinDownloaderMiddleware(object):
         # - return a Response object
         # - return a Request object
         # - or raise IgnoreRequest
-        
         # reload(sys)
         # sys.setdefaultencoding('utf8')   
         # if 'isDetail' in request.meta:

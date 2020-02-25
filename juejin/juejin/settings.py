@@ -71,6 +71,7 @@ DOWNLOADER_MIDDLEWARES = {
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     'juejin.pipelines.PostgresPipeline': 300,
+    'juejin.pipelines.VaporServerPipeline':301,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
@@ -98,3 +99,6 @@ POSTGRES_URL = 'localhost'
 POSTGRES_PORT = '5432'
 POSTGRES_DATABASE = 'postgres'
 POSTGRES_PASSWORD = '123456'
+
+VAPOR_SERVER_HOST = 'localhost'
+VAPOR_SERVER_PORT = '8080'
